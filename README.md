@@ -25,15 +25,13 @@ The underlying NVS dataset is publicly available and remains the property of Tou
 
 The diagnostic compares visitor expenditure shares within destination-type peer groups using expenditure-weighted benchmarks.
 
-Differences of ±0.5 percentage points or less are treated as broadly at benchmark.
+Differences of 0.5 percentage points or less in absolute terms are treated as broadly at benchmark.
 
 The analysis is based on a single year of data and should be interpreted as a directional diagnostic rather than a definitive forecast or policy recommendation.
 
 ## Intellectual property
 
 This repository contains an original analytical framework, benchmarking methodology, interpretation, visual design and interactive implementation developed by Rahul Kohli.
-
-The underlying Tourism Research Australia National Visitor Survey (NVS) data remains the property of Tourism Research Australia.
 
 © 2026 Rahul Kohli. All rights reserved in relation to the original analytical framework, written content, visual presentation and source code.
 
