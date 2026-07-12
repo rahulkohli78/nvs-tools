@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="light dark">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitor Portfolio Risk Diagnostic</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F6F4F1;--panel:#EDEAE6;--ink:#1A1A1A;--mid:#444444;
+  --rule:#C8C4BE;--off:#E0DDD8;--navy:#003580;--red:#EF2B2D;
+  --holiday:#C17C3A;--vfr:#1EA0DC;--business:#3A8C5C;--other:#7B5EA7;
+  --btn-bg:#F6F4F1;--btn-border:#C8C4BE;--btn-color:#444444;
+  --active-text:#ffffff;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1C1C1E;--panel:#2C2C2E;--ink:#F0EEE9;--mid:#ABABAB;
+    --rule:#3A3A3C;--off:#3A3A3C;--navy:#5B9BD5;--red:#EF2B2D;
+    --holiday:#D4934F;--vfr:#4DB8F0;--business:#52A87A;--other:#9B7EC7;
+    --btn-bg:#2C2C2E;--btn-border:#3A3A3C;--btn-color:#ABABAB;
+    --active-text:#111111;
+  }
+}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--ink);padding:32px 20px 64px;max-width:800px;margin:0 auto}
+.title{font-family:'Arial Black',Arial,sans-serif;font-size:20px;font-weight:900;color:var(--navy);margin-bottom:4px;line-height:1.2}
+.subtitle{font-size:14px;color:var(--mid);margin-bottom:28px;line-height:1.6;max-width:580px}
+.step-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:var(--mid);margin-bottom:10px}
+.selector{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.btn{padding:10px 18px;border:2px solid var(--btn-border);background:var(--btn-bg);font-family:'Arial Black',Arial,sans-serif;font-size:14px;font-weight:900;color:var(--btn-color);cursor:pointer;transition:all .12s;letter-spacing:.02em}
+.btn:hover{border-color:var(--navy);color:var(--navy)}
+.btn.active-state{background:var(--navy);border-color:var(--navy);color:var(--active-text)}
+.btn.active-purpose{color:var(--active-text);border-color:transparent}
+.prompt{font-size:14px;color:var(--mid);font-style:italic;margin:8px 0 16px}
+.panel{display:none}
+.state-header{display:flex;align-items:flex-start;gap:16px;padding:20px 0 16px;border-bottom:3px solid var(--navy);margin-bottom:0}
+.state-code{font-family:'Arial Black',Arial,sans-serif;font-size:40px;font-weight:900;color:var(--navy);line-height:1}
+.state-full{font-family:'Arial Black',Arial,sans-serif;font-size:17px;font-weight:900;color:var(--ink)}
+.state-type{font-size:12px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+.purpose-badge{display:inline-block;font-size:11px;font-weight:700;padding:4px 14px;color:var(--active-text);margin-top:10px;letter-spacing:.04em;text-transform:uppercase}
+.section{padding:24px 0;border-bottom:1px solid var(--rule)}
+.section:last-of-type{border-bottom:none}
+.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:var(--mid);margin-bottom:12px}
+.sec-finding{font-family:'Arial Black',Arial,sans-serif;font-size:17px;font-weight:900;color:var(--ink);line-height:1.35;margin-bottom:16px}
+.bullets{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:0}
+.bullets li{font-size:14px;font-weight:700;color:var(--ink);padding-left:20px;position:relative;line-height:1.5}
+.bullets li::before{content:'';position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:50%;background:var(--navy)}
+/* STRIP */
+.strip-wrap{margin:20px 0 4px}
+.strip-endpoints{display:flex;justify-content:space-between;font-size:9px;color:var(--mid);margin-bottom:4px}
+.strip-peer-above{position:relative;height:18px;margin-bottom:2px}
+.strip-peer-label{position:absolute;font-size:10px;font-weight:700;color:var(--navy);transform:translateX(-50%);white-space:nowrap;bottom:0}
+.strip-track{height:20px;background:var(--off);border-radius:2px;position:relative;margin-bottom:6px}
+.strip-fill{position:absolute;top:0;bottom:0;left:0;border-radius:2px 0 0 2px;min-width:3px}
+.strip-peer{position:absolute;top:0;bottom:0;width:3px;background:var(--navy);border-radius:1px}
+.strip-state-label{font-size:11px;font-weight:700;margin-top:0}
+@media(prefers-color-scheme:dark){
+  .strip-track{background:#4A4A4C}
+}
+/* INDICATOR */
+.indicator{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--panel);border-left:4px solid var(--navy);margin:12px 0}
+.ind-arrow{font-family:'Arial Black',Arial,sans-serif;font-size:22px;font-weight:900;line-height:1}
+.ind-label{font-family:'Arial Black',Arial,sans-serif;font-size:14px;font-weight:900;color:var(--ink)}
+/* BLUR */
+.blur-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 18px;background:var(--panel);margin:12px 0}
+.blur-text{font-size:14px;color:var(--ink)}
+.blur-num{font-family:'Arial Black',Arial,sans-serif;font-size:18px;font-weight:900;color:var(--red);filter:blur(5px);user-select:none;letter-spacing:-.5px}
+.above-note{padding:14px 18px;background:var(--panel);margin:12px 0;font-size:14px;color:var(--mid);border-left:4px solid var(--navy)}
+/* YIELD */
+.spend-block{padding:12px 0 4px}
+.spend-value{font-family:'Arial Black',Arial,sans-serif;font-size:26px;font-weight:900;line-height:1}
+.spend-label{font-size:13px;color:var(--mid);margin-top:4px}
+.insight{font-size:14px;color:var(--ink);line-height:1.65;margin-top:10px}
+.simple-note{font-size:14px;color:var(--mid);line-height:1.65}
+/* QUESTION */
+.question{font-size:15px;font-weight:700;color:var(--navy);line-height:1.6;margin-top:24px;padding:16px 18px;background:var(--panel);border-left:4px solid var(--navy)}
+/* CTA */
+.cta{margin-top:28px;padding-top:16px;border-top:1px solid var(--rule)}
+.cta-name{font-size:13px;font-weight:700;color:var(--ink)}
+.cta-link{font-size:12px;color:var(--mid);margin-top:2px}
+.cta-link a{color:var(--mid);text-decoration:none}
+.cta-link a:hover{color:var(--navy);text-decoration:underline}
+.page-footer{margin-top:32px;font-size:11px;color:var(--mid);line-height:1.7;padding-top:16px;border-top:1px solid var(--rule)}
+@media(max-width:520px){.state-code{font-size:32px}.sec-finding{font-size:15px}.btn{padding:8px 12px;font-size:13px}}
+</style>
+</head>
+<body>
+<div class="title">Visitor Portfolio Risk Diagnostic</div>
+<div class="subtitle">Select a state, then a visitor purpose, to see how that combination compares to destination peers and what it means for the visitor economy.</div>
+<div class="step-label">Step 1 — Select a state</div>
+<div class="selector" id="state-sel"></div>
+<div id="purpose-wrap" style="display:none">
+  <div class="step-label">Step 2 — Select a visitor purpose</div>
+  <div class="selector" id="purpose-sel"></div>
+</div>
+<div class="prompt" id="prompt">Select a state above to begin.</div>
+<div class="panel" id="panel"></div>
+<div class="page-footer">
+  Source: Tourism Research Australia, National Visitor Survey (NVS), Year Ending December 2024.
+  Concentration benchmarks are expenditure-weighted averages within destination type peer groups.
+  Differences of 0.5 percentage points or less in absolute terms are treated as broadly at benchmark.
+  One year of data. Directional finding, not a definitive result. Full methodology under engagement.
+</div>
+<script>
+const SEG={
+  holiday:{label:'Holiday',  color:'var(--holiday)'},
+  vfr:    {label:'VFR',      color:'var(--vfr)'},
+  business:{label:'Business',color:'var(--business)'},
+  other:  {label:'Other',    color:'var(--other)'},
+};
+const STATES={
+  NSW:{full:'New South Wales',              type:'Urban Gateway'},
+  VIC:{full:'Victoria',                     type:'Urban Gateway'},
+  QLD:{full:'Queensland',                   type:'Coastal Leisure'},
+  SA: {full:'South Australia',              type:'Regional Mixed'},
+  WA: {full:'Western Australia',            type:'Regional Mixed'},
+  TAS:{full:'Tasmania',                     type:'Coastal Leisure'},
+  NT: {full:'Northern Territory',           type:'Remote',nt:true},
+  ACT:{full:'Australian Capital Territory', type:'Urban Gateway'},
+};
+
+// All statePct/benchPct are actual purpose share percentages from raw Table 3c
+// Direction uses ±0.5pp threshold: differences ≤0.5pp absolute are 'at'
+// opp values retained even when dir:'at' but not displayed (communication threshold ≠ model zero)
+const DATA={
+  NSW:{
+    holiday:{dir:'under',statePct:53.6,benchPct:54.8,blur:'$344M',opp:344,spend:953,
+      finding:'New South Wales is the most diversified Urban Gateway in Australia.',
+      bullets:[
+        'The gap sits in Holiday — not where most analysts look for New South Wales.',
+        'Diversification is a strength. The cost is Holiday share.',
+        'The next diagnostic should test the relative role of product, positioning and access in explaining the gap.',
+      ],
+      insight:'New South Wales generates $953 per Holiday trip — the highest of any Urban Gateway, but well below Queensland at $1,344 and Tasmania at $1,350.',
+      question:'The scale is already there. What is holding back Holiday share and yield?'},
+    vfr:{dir:'above',statePct:21.0,benchPct:20.3,blur:null,opp:0,spend:461,
+      simpleNote:'New South Wales generates $461 per VFR trip — marginally above the Urban Gateway benchmark. The model points to Holiday as the opportunity.',
+      question:null},
+    business:{dir:'at',statePct:20.6,benchPct:20.7,blur:null,opp:31,spend:785,
+      simpleNote:'New South Wales generates $785 per Business trip. The segment sits broadly at the Urban Gateway peer benchmark.',
+      question:null},
+    other:{dir:'above',statePct:4.9,benchPct:4.2,blur:null,opp:0,spend:617,
+      simpleNote:'New South Wales generates $617 per Other purpose trip — marginally above the Urban Gateway benchmark.',
+      question:null},
+  },
+  VIC:{
+    holiday:{dir:'above',statePct:58.6,benchPct:54.8,blur:null,opp:0,spend:856,
+      finding:'Victoria is more concentrated in Holiday than comparable Urban Gateways.',
+      bullets:[
+        'Concentration in Holiday has not translated into yield leadership — $856 per Holiday trip is the lowest of any Urban Gateway.',
+        'The concentration is not converting into yield or portfolio balance.',
+      ],
+      insight:'Victoria\'s Holiday concentration is above benchmark. The opportunity sits in the segments that remain below benchmark.',
+      question:'More concentrated than peers. Lower yield than peers. What does that tell you?'},
+    vfr:{dir:'under',statePct:18.7,benchPct:20.3,blur:'$317M',opp:317,spend:392,
+      finding:'VFR spend in Victoria sits below the Urban Gateway peer benchmark.',
+      bullets:[
+        'Victoria generates $392 per VFR trip — the lowest of any Urban Gateway.',
+        'VFR and Business are both below benchmark, suggesting a broader non-Holiday demand pattern rather than a single product gap.',
+        'Addressing VFR alone captures less than half the total Victorian opportunity.',
+      ],
+      insight:'Victoria generates $392 per VFR trip — the lowest of any Urban Gateway.',
+      question:'VFR and Business are both below benchmark. What is the one thing they have in common?'},
+    business:{dir:'under',statePct:18.9,benchPct:20.7,blur:'$351M',opp:351,spend:772,
+      finding:'Business travel in Victoria sits below the Urban Gateway peer benchmark.',
+      bullets:[
+        'The Business yield is real. The share is not following.',
+        'VFR and Business are both underleveraged, making this a portfolio question rather than an isolated Business product question.',
+        'Business represents roughly half of Victoria\'s modelled opportunity.',
+      ],
+      insight:'Victoria generates $772 per Business trip. The yield is there. The volume relative to peers is not.',
+      question:'The yield is there. Why isn\'t the volume?'},
+    other:{dir:'at',statePct:3.7,benchPct:4.2,blur:null,opp:99,spend:559,
+      simpleNote:'Victoria generates $559 per Other purpose trip. The segment sits broadly at the Urban Gateway peer benchmark.',
+      question:null},
+  },
+  QLD:{
+    holiday:{dir:'under',statePct:55.7,benchPct:57.1,blur:'$352M',opp:352,spend:1344,
+      finding:'Queensland\'s Holiday share sits below its Coastal Leisure peer benchmark.',
+      bullets:[
+        'Queensland generates $1,344 per Holiday trip. The yield is real. The share is not following what comparable coastal destinations achieve.',
+        'Every non-Holiday segment is at or above the Coastal Leisure benchmark.',
+        'The Holiday gap is the singular question for Queensland.',
+      ],
+      insight:'Queensland generates $1,344 per Holiday trip but its Holiday share sits below comparable coastal destinations.',
+      question:'Queensland is strongly associated with Holiday demand. What explains its below-benchmark share relative to comparable coastal destinations?'},
+    vfr:{dir:'at',statePct:18.5,benchPct:18.1,blur:null,opp:0,spend:576,
+      simpleNote:'Queensland generates $576 per VFR trip. The segment sits broadly at the Coastal Leisure peer benchmark.',
+      question:null},
+    business:{dir:'above',statePct:21.6,benchPct:20.8,blur:null,opp:0,spend:900,
+      simpleNote:'Queensland generates $900 per Business trip — above benchmark. The singular gap is in Holiday.',
+      question:'Business is above benchmark while Holiday remains below comparable coastal destinations. What explains that difference?'},
+    other:{dir:'at',statePct:4.1,benchPct:4.0,blur:null,opp:0,spend:690,
+      simpleNote:'Queensland generates $690 per Other purpose trip. The segment sits broadly at the Coastal Leisure peer benchmark.',
+      question:null},
+  },
+  SA:{
+    holiday:{dir:'above',statePct:47.5,benchPct:44.1,blur:null,opp:0,spend:872,
+      simpleNote:'South Australia generates $872 per Holiday trip — above benchmark. Holiday is not the gap. Business travel is the singular portfolio gap.',
+      question:'Holiday above benchmark. Business the singular gap. What would it take to hold one while closing the other?'},
+    vfr:{dir:'above',statePct:21.4,benchPct:18.7,blur:null,opp:0,spend:564,
+      simpleNote:'South Australia generates $564 per VFR trip — above benchmark. The singular gap sits in Business travel.',
+      question:null},
+    business:{dir:'under',statePct:24.4,benchPct:31.2,blur:'$396M',opp:396,spend:820,
+      finding:'South Australia\'s entire diversification opportunity sits in Business travel.',
+      bullets:[
+        'South Australia does not have a Business travel yield problem — $820 per trip, above New South Wales at $785.',
+        'The yield is strong, but Business share remains below comparable regional economies.',
+        'No other segment is underleveraged. The entire opportunity is concentrated here.',
+      ],
+      insight:'South Australia generates $820 per Business trip. Yield is strong, while Business share remains below comparable regional economies.',
+      question:'The yield exceeds New South Wales. The share does not follow. What explains that gap?'},
+    other:{dir:'above',statePct:6.7,benchPct:6.0,blur:null,opp:0,spend:599,
+      simpleNote:'South Australia generates $599 per Other purpose trip — above benchmark. Business travel is the singular gap.',
+      question:'Other is above benchmark. Business travel is the singular gap. Is the constraint connectivity, demand generation, or how South Australia is positioned to business travellers?'},
+  },
+  WA:{
+    holiday:{dir:'under',statePct:42.1,benchPct:44.1,blur:'$200M',opp:200,spend:982,
+      finding:'Holiday spend in Western Australia sits below the Regional Mixed peer benchmark.',
+      bullets:[
+        'Western Australia generates $982 per Holiday trip — a strong yield. The gap is in share, not spend.',
+        'Holiday is the largest underleveraged segment in Western Australia.',
+        'Business is the one segment performing above benchmark at $1,060 per trip.',
+      ],
+      insight:'Western Australia generates $982 per Holiday trip. The yield is strong. The share relative to comparable regional economies is the gap.',
+      question:'Strong yield. Below-benchmark share. What does the gap reveal about who is not coming and why?'},
+    vfr:{dir:'under',statePct:17.1,benchPct:18.7,blur:'$155M',opp:155,spend:582,
+      finding:'VFR spend in Western Australia sits below the Regional Mixed peer benchmark.',
+      bullets:[
+        'The VFR gap is the second of two underleveraged segments alongside Holiday.',
+        'Business leads while Holiday and VFR lag — the pattern reveals something about who chooses Western Australia.',
+        'This is a portfolio structure question, not a single segment question.',
+      ],
+      insight:'Western Australia generates $582 per VFR trip. Holiday and VFR are below benchmark while Business leads.',
+      question:'Business leads. Holiday and VFR lag. What does that pattern reveal about who chooses Western Australia and why?'},
+    business:{dir:'above',statePct:35.3,benchPct:31.2,blur:null,opp:0,spend:1060,
+      simpleNote:'Western Australia generates $1,060 per Business trip — the highest of any non-remote state. Business is the strength. Holiday and VFR sit below benchmark.',
+      question:'Highest Business yield of any non-remote state. Holiday and VFR below benchmark. What is holding that balance?'},
+    other:{dir:'at',statePct:5.6,benchPct:6.0,blur:null,opp:40,spend:821,
+      simpleNote:'Western Australia generates $821 per Other purpose trip — the highest Other yield of any state. The segment sits broadly at the Regional Mixed peer benchmark.',
+      question:null},
+  },
+  TAS:{
+    holiday:{dir:'above',statePct:67.5,benchPct:57.1,blur:null,opp:0,spend:1350,
+      finding:'Tasmania is the most concentrated visitor economy in Australia.',
+      bullets:[
+        '67.5% of all Tasmanian visitor spend comes from Holiday visitors — the largest concentration gap in the dataset.',
+        'High yield in one segment is not the same as a resilient portfolio.',
+        'When Holiday demand shifts, 67 cents in every dollar moves with it.',
+      ],
+      insight:'Tasmania generates $1,350 per Holiday trip — second highest in Australia. The risk is not yield. It is dependency.',
+      question:'67 cents in every dollar comes from Holiday. What would a more balanced portfolio look like over time?'},
+    vfr:{dir:'under',statePct:15.1,benchPct:18.1,blur:'$102M',opp:102,spend:648,
+      finding:'VFR spend in Tasmania sits below the Coastal Leisure peer benchmark.',
+      bullets:[
+        'Tasmania generates $648 per VFR trip — a solid yield for a segment that remains below benchmark in a Holiday-dominant portfolio.',
+        'Comparable Coastal Leisure destinations achieve a meaningfully higher VFR share.',
+        'Growing VFR would require demand conditions that are distinct from those supporting Tasmania\'s strong Holiday market.',
+      ],
+      insight:'Tasmania generates $648 per VFR trip. The segment is below benchmark in an economy dominated by Holiday.',
+      question:'VFR sits below benchmark in an economy where Holiday dominates. What would growing this segment require that more Holiday investment would not deliver?'},
+    business:{dir:'under',statePct:14.8,benchPct:20.8,blur:'$204M',opp:204,spend:812,
+      finding:'Business travel in Tasmania sits well below the Coastal Leisure peer benchmark.',
+      bullets:[
+        'Tasmania\'s Business gap is the largest single-segment Business gap of any Coastal Leisure state.',
+        'Business is the largest single opportunity in Tasmania\'s diversification picture at $204 million.',
+        'The pattern raises the question of how Tasmania\'s Holiday-led demand structure interacts with the conditions needed for Business travel.',
+      ],
+      insight:'Tasmania generates $812 per Business trip. The yield is real. The share is the structural question.',
+      question:'The yield is real. The share is not. What conditions would have to shift for Business demand to find its way here?'},
+    other:{dir:'under',statePct:2.6,benchPct:4.0,blur:'$46M',opp:46,spend:490,
+      finding:'Other spend in Tasmania sits below the Coastal Leisure peer benchmark.',
+      bullets:[
+        'Three segments below benchmark alongside one dominant segment. The pattern points to a common portfolio-level cause.',
+        'Other is the smallest of three underleveraged segments — secondary to Business and VFR.',
+      ],
+      insight:'Tasmania generates $490 per Other purpose trip. Three segments below benchmark alongside Holiday dominance.',
+      question:'Three segments below benchmark. Should the response sit at the segment level or the portfolio level?'},
+  },
+  NT:{
+    holiday:{nt:true,spend:2028,
+      ntFinding:'The Northern Territory does not benchmark against comparable peers.',
+      ntBullets:[
+        'The Northern Territory is the sole Remote destination in this dataset. The concentration gap is zero by construction.',
+        'Holiday visitors spend $2,028 per trip — the highest of any state-purpose combination in Australia.',
+        'A yield, access and market-reach analysis is more relevant here than a concentration benchmark.',
+      ],
+      insight:'Northern Territory Holiday visitors spend $2,028 per trip — the highest in Australia.',
+      question:'$2,028 per Holiday trip. The highest in Australia. What is the right question to ask of that number?'},
+    vfr:{nt:true,spend:1112,
+      ntFinding:'The Northern Territory does not benchmark against comparable peers.',
+      ntBullets:[
+        'The Northern Territory is the sole Remote destination in this dataset. The concentration gap is zero by construction.',
+        'VFR visitors spend $1,112 per trip — a strong yield relative to comparable purpose segments elsewhere.',
+        'A yield, access and market-reach analysis is more relevant here than a concentration benchmark.',
+      ],
+      insight:'Northern Territory VFR visitors spend $1,112 per trip. The concentration model does not apply here.',
+      question:'$1,112 per VFR trip. Which measures would reveal whether the opportunity is constrained by access, frequency or underlying demand?'},
+    business:{nt:true,spend:1298,
+      ntFinding:'The Northern Territory does not benchmark against comparable peers.',
+      ntBullets:[
+        'The Northern Territory is the sole Remote destination in this dataset. The concentration gap is zero by construction.',
+        'Business visitors spend $1,298 per trip — a strong yield reflecting the nature of business travel to a remote economy.',
+        'A yield, access and market-reach analysis is more relevant here than a concentration benchmark.',
+      ],
+      insight:'Northern Territory Business visitors spend $1,298 per trip. The concentration model does not apply here.',
+      question:'$1,298 per Business trip in a remote economy. What is the right analytical lens for a market where yield is not the constraint?'},
+    other:{nt:true,spend:null,
+      ntFinding:'The Northern Territory does not benchmark against comparable peers.',
+      ntBullets:[
+        'The Northern Territory is the sole Remote destination in this dataset. The concentration gap is zero by construction.',
+        'Other purpose spend is not publishable for the Northern Territory in 2024.',
+        'A yield, access and market-reach analysis is more relevant here than a concentration benchmark.',
+      ],
+      insight:'Other purpose spend is not published for the Northern Territory in 2024.',
+      question:'What data would a proper Northern Territory diagnostic actually require?'},
+  },
+  ACT:{
+    holiday:{dir:'under',statePct:35.9,benchPct:54.8,blur:'$423M',opp:423,spend:867,
+      finding:'The Australian Capital Territory\'s entire diversification opportunity sits in Holiday.',
+      bullets:[
+        'A government capital generates less Holiday spend than comparable gateway economies.',
+        'The gap is concentrated in Holiday — the one segment least aligned with the ACT\'s established demand base.',
+        'The ACT\'s identity as a government and conference destination is one plausible explanation for the Holiday gap.',
+      ],
+      insight:'The Australian Capital Territory generates $867 per Holiday trip. Growing Holiday share in a government capital is likely to require more than marketing alone.',
+      question:'A gateway economy that underperforms on Holiday. What is the ACT not yet offering that comparable gateways are?'},
+    vfr:{dir:'above',statePct:26.3,benchPct:20.3,blur:null,opp:0,spend:550,
+      simpleNote:'The Australian Capital Territory generates $550 per VFR trip — above benchmark. VFR and Business are both performing. Holiday is the singular gap.',
+      question:'VFR and Business are both above benchmark. Holiday is not. What does that tell you about the relationship between the ACT\'s identity and its visitor mix?'},
+    business:{dir:'above',statePct:37.8,benchPct:20.7,blur:null,opp:0,spend:868,
+      simpleNote:'The Australian Capital Territory generates $868 per Business trip — higher than New South Wales at $785, despite being a fraction of its size.',
+      question:'Higher Business yield than New South Wales at a fraction of the size. What is sustaining that position, and how might it evolve over time?'},
+    other:{dir:'unavailable',statePct:null,benchPct:4.2,blur:null,opp:94,spend:null,unpublished:true,
+      finding:null,
+      simpleNote:'The available data does not support a publishable benchmark finding for this combination. Other purpose expenditure is not separately publishable for the Australian Capital Territory in 2024.',
+      insight:null,question:null},
+  },
+};
+
+const arrowMap={under:'↓',above:'↑',at:'→'};
+const arrowCol={under:'#1a5c32',above:'#7a1515',at:'var(--mid)'};
+const dirLabel={
+  under:'Underleveraged. Capturing less than comparable destinations.',
+  above:'Above benchmark. Carrying more than comparable destinations.',
+  at:   'Broadly at the peer benchmark.',
+};
+
+const stateSel   =document.getElementById('state-sel');
+const purposeWrap=document.getElementById('purpose-wrap');
+const purposeSel =document.getElementById('purpose-sel');
+const prompt     =document.getElementById('prompt');
+const panel      =document.getElementById('panel');
+
+Object.keys(STATES).forEach(code=>{
+  const btn=document.createElement('button');
+  btn.className='btn';
+  btn.textContent=code;
+  btn.onclick=()=>{
+    document.querySelectorAll('#state-sel .btn').forEach(b=>b.classList.remove('active-state'));
+    btn.classList.add('active-state');
+    buildPurposeSel(code);
+    panel.style.display='none';
+    prompt.style.display='none';
+    document.getElementById('purpose-wrap').style.display='block';
+  };
+  stateSel.appendChild(btn);
+});
+
+function buildPurposeSel(code){
+  purposeSel.innerHTML='';
+  Object.keys(SEG).forEach(pur=>{
+    const btn=document.createElement('button');
+    btn.className='btn';
+    btn.textContent=SEG[pur].label;
+    btn.style.borderColor=SEG[pur].color;
+    btn.style.color=SEG[pur].color;
+    btn.dataset.pur=pur;
+    btn.onclick=()=>{
+      document.querySelectorAll('#purpose-sel .btn').forEach(b=>{
+        b.classList.remove('active-purpose');
+        b.style.background='';
+        b.style.color=SEG[b.dataset.pur].color;
+        b.style.borderColor=SEG[b.dataset.pur].color;
+      });
+      btn.classList.add('active-purpose');
+      btn.style.background=SEG[pur].color;
+      btn.style.color='var(--active-text)';
+      renderPanel(code,pur);
+    };
+    purposeSel.appendChild(btn);
+  });
+}
+
+function buildStrip(d, sc, stateName){
+  // Do not render strip if state share is not publishable
+  if(d.statePct === null || d.unpublished){
+    return `<div class="above-note" style="margin-top:12px">State share not publishable for this combination. Peer benchmark shown for reference only.</div>`;
+  }
+  const sp = d.statePct;
+  const bp = d.benchPct;
+  // Clamp label position to avoid overflow at edges — marker stays at actual bp
+  const labelPct = Math.min(88, Math.max(12, bp));
+  return `
+    <div class="strip-wrap">
+      <div class="strip-endpoints">
+        <span>0% of visitor spend</span>
+        <span>100%</span>
+      </div>
+      <div class="strip-peer-above">
+        <span class="strip-peer-label" style="left:${labelPct}%">Peer benchmark</span>
+      </div>
+      <div class="strip-track">
+        <div class="strip-fill" style="width:${sp}%;background:${sc}"></div>
+        <div class="strip-peer" style="left:${bp}%"></div>
+      </div>
+      <div class="strip-state-label" style="color:${sc}">${stateName}</div>
+    </div>`;
+}
+
+function renderPanel(code, pur){
+  const s  = STATES[code];
+  const d  = DATA[code][pur];
+  const sc = SEG[pur].color;
+  const sl = SEG[pur].label;
+  panel.style.display = 'block';
+
+  const hdr=`
+    <div class="state-header">
+      <div class="state-code" style="color:var(--navy)">${code}</div>
+      <div>
+        <div class="state-full">${s.full}</div>
+        <div class="state-type">${s.type}</div>
+        <div class="purpose-badge" style="background:${sc}">${sl}</div>
+      </div>
+    </div>`;
+
+  const cta=`
+    <div class="cta">
+      <div class="cta-name">Rahul Kohli</div>
+      <div class="cta-link"><a href="https://rahulkohli.carrd.co/" target="_blank" rel="noopener">rahulkohli.carrd.co</a></div>
+    </div>`;
+
+  if(d.nt){
+    const spendHTML=d.spend
+      ?`<div class="spend-block"><div class="spend-value" style="color:${sc}">$${d.spend.toLocaleString()}</div><div class="spend-label">per ${sl} trip in the Northern Territory</div></div>`
+      :`<div class="spend-block"><div class="spend-label" style="margin-top:0">Spend per trip not published for this purpose in 2024.</div></div>`;
+    const bullets=(d.ntBullets||[]).map(b=>`<li>${b}</li>`).join('');
+    const qHTML=d.question?`<div class="question">${d.question}</div>`:'';
+    const insightHTML=d.insight?`<div class="insight">${d.insight}</div>`:'';
+    panel.innerHTML=`${hdr}
+      <div class="section">
+        <div class="sec-label">Portfolio diagnosis</div>
+        <div class="sec-finding">${d.ntFinding}</div>
+        <ul class="bullets">${bullets}</ul>
+      </div>
+      <div class="section">
+        <div class="sec-label">Yield profile</div>
+        ${spendHTML}${insightHTML}${qHTML}
+      </div>${cta}`;
+    return;
+  }
+
+  const strip = (d.dir==='unavailable') ? '' : buildStrip(d, sc, s.full);
+
+  let blurHTML;
+  if(d.dir==='unavailable'){
+    blurHTML='';
+  } else if(d.dir==='under' && d.blur){
+    blurHTML=`<div class="blur-row"><span class="blur-text">This gap is worth</span><span class="blur-num">${d.blur}</span><span class="blur-text">in domestic visitor spend.</span></div>`;
+  } else if(d.dir==='at'){
+    blurHTML=`<div class="above-note">This purpose is broadly in line with the peer benchmark.</div>`;
+  } else {
+    blurHTML=`<div class="above-note">This purpose carries a larger share than it does in comparable destinations.</div>`;
+  }
+
+  const spendHTML=d.spend
+    ?`<div class="spend-block"><div class="spend-value" style="color:${sc}">$${d.spend.toLocaleString()}</div><div class="spend-label">per ${sl} trip in ${s.full}</div></div>`
+    :`<div class="spend-block"><div class="spend-label" style="margin-top:0">Spend per trip not published for this combination.</div></div>`;
+
+  const qHTML   = d.question ? `<div class="question">${d.question}</div>` : '';
+  const insightHTML = d.insight ? `<div class="insight">${d.insight}</div>` : '';
+
+  let diagContent='';
+  if(d.simpleNote){
+    diagContent=`<div class="simple-note">${d.simpleNote}</div>`;
+  } else if(d.bullets){
+    diagContent=`<ul class="bullets">${d.bullets.map(b=>`<li>${b}</li>`).join('')}</ul>`;
+  }
+
+  panel.innerHTML=`${hdr}
+    <div class="section">
+      <div class="sec-label">Portfolio diagnosis</div>
+      ${d.finding ? `<div class="sec-finding">${d.finding}</div>` : ''}
+      ${diagContent}
+      ${strip}
+      ${d.dir!=='unavailable' ? `<div class="indicator">
+        <div class="ind-arrow" style="color:${arrowCol[d.dir]}">${arrowMap[d.dir]}</div>
+        <div class="ind-label">${dirLabel[d.dir]}</div>
+      </div>` : ''}
+      ${blurHTML}
+    </div>
+    <div class="section">
+      <div class="sec-label">Yield profile</div>
+      ${spendHTML}${insightHTML}${qHTML}
+    </div>${cta}`;
+}
+</script>
+</body>
+</html>
